@@ -1,0 +1,88 @@
+:sourcedir: src/main/java
+
+= Simple GraalVM Native Image Demo
+
+Copyright © Marcus Fihlon
+
+== Initialization
+
+ mkdir list
+ cd list
+ gradle init
+
+Project type: `java-application` +
+Build script DSL: `groovy` +
+Test framework: `spock` +
+Project name: `list` +
+Source package: `ch.jug.graalvm.list`
+
+Now, configure the build to add a manifest to the build artifact. Add the following snippet to the end of the `build.gradle` file.
+
+.build.gradle
+[source,groovy]
+----
+jar {
+    manifest {
+        attributes(
+            'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
+            'Main-Class': mainClassName
+        )
+    }
+}
+----
+
+== The Source
+
+This example program just lists all files from the current directory using the standard Java API. Replace the existing default source code in `App.java` with the following snippet:
+
+.App.java
+[source,java]
+----
+package ch.jug.graalvm.list;
+
+import java.io.File;
+import java.util.Arrays;
+
+public class App {
+    public static void main(final String... args) {
+        Arrays.stream(new File(".").listFiles())
+              .forEach(System.out::println);
+    }
+}
+----
+
+== Build
+
+We use Gradle, to build the project. You do not needto have Gradle installed!
+
+ ./gradlew assemble
+
+The JAR file will be available in the `build/libs` directory.
+
+== Test with Java VM
+
+Start the program and use the `time` utility to measure the execution time (not available in Windows):
+
+ time java -jar build/libs/list.jar
+
+Start it several times to calculate the average.
+
+== Create Native Image
+
+Use the GraalVM Native Image tool to create a native binary of the program:
+
+ native-image --static --no-server -jar build/libs/list.jar
+
+Depending on your CPU power and IO rate, this might take some time! After it is finished, you will find a runnable file `list` in the root directory of this project.
+
+== Test with Native Image
+
+Start the program and use the `time` utility to measure the execution time (not available in Windows):
+
+ time ./list
+
+Start it several times to calculate the average and compare it to the previous tests. Finally, check that it is really a native executable:
+
+ file list
+
+The `file` command is not available in Windows.

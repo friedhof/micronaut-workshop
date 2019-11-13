@@ -1,0 +1,29 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore build output directories
+bin/
+build/
+out/
+target/
+
+# Ignore binaries
+list/list
+beers/beers
+
+# Native libraries
+beers/libsunec.so
+
+# Ignore IDE files
+*.iml
+*.ipr
+*.iws
+.classpath
+.idea
+.project
+.settings
+.vscode
+
+# OS files
+Thumbs.db
+.DS_Store

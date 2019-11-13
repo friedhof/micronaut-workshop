@@ -1,0 +1,478 @@
+:sourcedir: src/main/java
+
+= Micronaut and GraalVM Demo
+
+Copyright © Marcus Fihlon
+
+== Introduction
+
+This document is the manual for the workshop *Micronaut with GraalVM in Practice*.  The final source code of the demo application is also in this repository. The most effective way to learn is not to access the source code in this repository, but to work through this workshop step by step.
+
+The demo application provides a service that is controlled by HTTP requests. The command-line tool link:https://curl.haxx.se/[cURL], which is available on many systems and known by many developers, is used for this purpose. A user-friendly alternative is link:https://httpie.org/[HTTPie]. In the following, this document contains the calls for both variants.
+
+== Initialization
+
+```
+mn create-app --features=http-server,http-client,graal-native-image ch.jug.micronaut.beers.beers
+
+cd beers
+
+./gradlew run
+
+curl -v http://localhost:8080
+http localhost:8080
+```
+
+== The Server
+
+.Beer.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonAutoDetect(fieldVisibility = Visibility.ANY)
+public class Beer {
+
+    private final Long id;
+
+    private final String name;
+
+    private final String brewery;
+
+    @JsonCreator
+    public Beer(@JsonProperty("id") final Long id,
+                @JsonProperty("name") final String name,
+                @JsonProperty("brewery") final String brewery) {
+        this.id = id;
+        this.name = name;
+        this.brewery = brewery;
+    } 
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getBrewery() {
+        return brewery;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((brewery == null) ? 0 : brewery.hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final Beer other = (Beer) obj;
+        if (brewery == null) {
+            if (other.brewery != null)
+                return false;
+        } else if (!brewery.equals(other.brewery))
+            return false;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Beer [id=" + id + ", name=" + name + ", brewery=" + brewery + "]";
+    }
+
+}
+----
+
+.BeerService.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Singleton;
+
+import io.reactivex.Observable;
+
+@Singleton
+public class BeerService {
+
+    private final List<Beer> beers = new ArrayList<>();
+
+    public BeerService() {
+        addBeer(new Beer(1L, "Luzerner Bier", "Brauerei Luzern AG"));
+        addBeer(new Beer(2L, "Lozärner Bier", "Lozärner Bier AG"));
+        addBeer(new Beer(3L, "Urbräu", "Tavolago AG"));
+    }
+
+    public Observable<Beer> getAllBeers() {
+        return Observable.fromIterable(beers);
+    }
+
+    public void addBeer(final Beer beer) {
+        beers.add(beer);
+    }
+
+}
+----
+
+.BeerController.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Post;
+import io.reactivex.Observable;
+
+@Controller("/beers")
+public class BeerController {
+
+    private final BeerService service;
+
+    public BeerController(final BeerService service) {
+        this.service = service;
+    }
+
+    @Get
+    public Observable<Beer> getAllBeers() {
+        return service.getAllBeers();
+    }
+
+    @Post
+    public void addBeer(@Body final Beer beer) {
+        service.addBeer(beer);
+    }
+
+}
+----
+
+Let's start and check, what we created so far:
+
+```
+./gradlew run
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+
+curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
+http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+```
+
+== The Client
+
+.BeerClient.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.client.annotation.Client;
+import io.reactivex.Flowable;
+
+@Client("/beers")
+public interface BeerClient {
+
+    @Get
+    public Flowable<Beer> fetchBeers();
+
+}
+----
+
+== The Scheduler
+
+.BeerFetcher.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.micronaut.scheduling.annotation.Scheduled;
+
+public class BeerFetcher {
+
+    private static final Logger logger = LoggerFactory.getLogger(BeerFetcher.class);
+
+    private final BeerClient client;
+
+    public BeerFetcher(final BeerClient client) {
+        this.client = client;
+    }
+
+    @Scheduled(fixedDelay = "5s", initialDelay = "10s")
+    public void fetchSomeBeer() {
+        client.fetchBeers()
+        .doOnError(e -> logger.error("Can't fetch beers!", e))
+        .forEach(beer -> logger.info(beer.toString()));
+    }
+
+}
+----
+
+ ./gradlew run
+
+== The Configuration
+
+=== Configuration file
+
+.application.yaml
+[source,yaml]
+----
+beers:
+  url: http://localhost:8080/beers
+  initial-delay: 10s
+  fixed-delay: 5s
+----
+
+.BeerClient.java
+[source,java]
+----
+@Client("${beers.url}")
+----
+
+.BeerFetcher.java
+[source,java]
+----
+@Scheduled(fixedDelay = "${beers.fixed-delay}", initialDelay = "${beers.initial-delay}")
+----
+
+ ./gradlew run
+
+=== Environment variables
+
+.application.yaml
+[source,yaml]
+----
+beers:
+  url: http://localhost:8080/beers
+  initial-delay: 10s
+  fixed-delay: ${BEERS_FIXED_DELAY}
+----
+
+ BEERS_FIXED_DELAY=2s ./gradlew run
+
+Try to start our service without specifying the environment variable:
+
+ ./gradlew run
+
+If an environment variable is mentioned in the configuration file, it is getting mandatory! You can use environment variables directly without mentioning in the configuration file. If they are not set, the values default to `null`, `0` or `false`, depending on the type.
+
+=== Default values
+
+.BeerFetcher.java
+[source,java]
+----
+@Scheduled(fixedDelay = "${beers.fixed-delay:5s}", initialDelay = "${beers.initial-delay:10s}")
+----
+
+.BeerClient.java
+[source,java]
+----
+@Client("${beers.url:`http://localhost:8080/beers`}")
+----
+
+ ./gradlew run
+
+Play around with commenting the `beers:` section from the configuration file in and out in combination with and without an environment variable to check out the different behavior.
+
+== Resilience
+
+=== Retries
+
+.BeerClient.java
+[source,java]
+----
+@Retryable(attempts = "10", delay = "5s")
+----
+
+=== Circuit Breaker
+
+.BeerClient.java
+[source,java]
+----
+@CircuitBreaker(delay = "5s", attempts = "5", multiplier = "2", reset = "10m")
+----
+
+=== Fallback
+
+.NoBeer.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.micronaut.retry.annotation.Fallback;
+import io.reactivex.Flowable;
+
+@Fallback
+public class NoBeer implements BeerClient {
+
+    private static final Logger logger = LoggerFactory.getLogger(NoBeer.class);
+
+    @Override
+    public Flowable<Beer> fetchBeers() {
+        logger.info("Fallback implementation called!");
+        return Flowable.empty();
+    }
+
+}
+----
+
+== Testing
+
+.BeerServiceTest.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import org.junit.jupiter.api.Test;
+
+import io.micronaut.test.annotation.MicronautTest;
+
+import javax.inject.Inject;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@MicronautTest
+class BeerServiceTest {
+
+    @Inject 
+    BeerService service;
+
+    @Test
+    public void testBeers() throws Exception {
+        final List<Beer> beers = new ArrayList<>();
+        service.getAllBeers().subscribe(beers::add);
+        assertEquals(3, beers.size());
+    }
+}
+----
+
+ ./gradlew test
+
+.BeerControllerTest.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import io.micronaut.http.HttpRequest;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.client.RxHttpClient;
+import io.micronaut.http.client.annotation.Client;
+import io.micronaut.runtime.server.EmbeddedServer;
+import io.micronaut.test.annotation.MicronautTest;
+import org.junit.jupiter.api.Test;
+
+import javax.inject.Inject;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@MicronautTest
+public class BeerControllerTest {
+
+    @Inject
+    private EmbeddedServer server;
+
+    @Inject
+    @Client("/")
+    private RxHttpClient client;
+
+    @Test
+    public void testBody() throws Exception {
+        final HttpRequest<String> request = HttpRequest.GET("/beers");
+        final String body = client.toBlocking().retrieve(request);
+        assertNotNull(body);
+        assertEquals(body, "[{\"id\":1,\"name\":\"Luzerner Bier\",\"brewery\":\"Brauerei Luzern AG\"},{\"id\":2,\"name\":\"Lozärner Bier\",\"brewery\":\"Lozärner Bier AG\"},{\"id\":3,\"name\":\"Urbräu\",\"brewery\":\"Tavolago AG\"}]");
+    }
+
+    @Test
+    public void testStatus() throws Exception {
+        try(RxHttpClient client = server.getApplicationContext().createBean(RxHttpClient.class, server.getURL())) {
+            assertEquals(HttpStatus.OK, client.toBlocking().exchange("/beers").status());
+        }
+    }
+}
+----
+
+ ./gradlew test
+
+Play around and modify the expectations to check out assertion errors.
+
+== GraalVM Native Image
+
+```
+./gradlew assemble
+
+native-image --enable-https --no-server -jar build/libs/beers-0.1-all.jar
+
+./beers
+
+BEERS_FIXED_DELAY=3s ./beers
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+
+curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
+http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+```
+
+== Build using Docker
+
+```
+docker build . -t beers
+
+docker run -p 8080:8080 beers
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+
+curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
+http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
+
+curl -v http://localhost:8080/beers
+http localhost:8080/beers
+```
