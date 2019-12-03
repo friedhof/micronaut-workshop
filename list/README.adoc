@@ -71,7 +71,7 @@ Start it several times to calculate the average.
 
 Use the GraalVM Native Image tool to create a native binary of the program:
 
- native-image --static --no-server -jar build/libs/list.jar
+ native-image --no-server -jar build/libs/list.jar
 
 Depending on your CPU power and IO rate, this might take some time! After it is finished, you will find a runnable file `list` in the root directory of this project.
 
