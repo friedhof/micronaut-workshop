@@ -444,7 +444,7 @@ Play around and modify the expectations to check out assertion errors.
 ```
 ./gradlew assemble
 
-native-image --enable-https --no-server -jar build/libs/beers-0.1-all.jar
+native-image --no-server -jar build/libs/beers-0.1-all.jar
 
 ./beers
 
