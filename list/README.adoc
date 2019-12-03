@@ -75,6 +75,13 @@ Use the GraalVM Native Image tool to create a native binary of the program:
 
 Depending on your CPU power and IO rate, this might take some time! After it is finished, you will find a runnable file `list` in the root directory of this project.
 
+[NOTE]
+====
+`--no-server` tells to not use server-based image building
+
+For server-based image building we allow to use 80% of the reported physical RAM for all servers together, but never more than 14GB per server (for exact details please consult the native-image source code). If you run with `--no-server` option, you will get the whole 80% of what is reported as physical RAM as the baseline. This mode respects `-Xmx` arguments additionally.
+====
+
 == Test with Native Image
 
 Start the program and use the `time` utility to measure the execution time (not available in Windows):
