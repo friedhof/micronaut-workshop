@@ -250,7 +250,7 @@ public class BeerFetcher {
 
 === Configuration file
 
-.application.yaml
+.src/main/resources/application.yml
 [source,yaml]
 ----
 beers:
@@ -275,7 +275,7 @@ beers:
 
 === Environment variables
 
-.application.yaml
+.src/main/resources/application.yml
 [source,yaml]
 ----
 beers:
