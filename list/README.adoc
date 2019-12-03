@@ -10,9 +10,10 @@ Copyright © Marcus Fihlon
  cd list
  gradle init
 
-Project type: `java-application` +
-Build script DSL: `groovy` +
-Test framework: `spock` +
+Project type: `application` +
+Language: `Java` +
+Build script DSL: `Groovy` +
+Test framework: `Spock` +
 Project name: `list` +
 Source package: `ch.jug.graalvm.list`
 
