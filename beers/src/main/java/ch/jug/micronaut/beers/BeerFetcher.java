@@ -19,7 +19,7 @@ public class BeerFetcher {
     public void fetchSomeBeer() {
         client.fetchBeers()
         .doOnError(e -> logger.error("Can't fetch beers!", e))
-        .forEach(beer -> logger.info(beer.toString()));
+        .forEach(beer -> logger.info("Receiving beer: {}", beer));
     }
 
 }
