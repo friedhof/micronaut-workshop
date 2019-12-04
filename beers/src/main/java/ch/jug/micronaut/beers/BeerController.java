@@ -4,7 +4,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 
 @Controller("/beers")
 public class BeerController {
@@ -16,7 +16,7 @@ public class BeerController {
     }
 
     @Get
-    public Observable<Beer> getAllBeers() {
+    public Flowable<Beer> getAllBeers() {
         return service.getAllBeers();
     }
 

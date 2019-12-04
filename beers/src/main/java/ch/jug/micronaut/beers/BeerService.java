@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 
 @Singleton
 public class BeerService {
@@ -18,8 +18,8 @@ public class BeerService {
         addBeer(new Beer(3L, "Urbräu", "Tavolago AG"));
     }
 
-    public Observable<Beer> getAllBeers() {
-        return Observable.fromIterable(beers);
+    public Flowable<Beer> getAllBeers() {
+        return Flowable.fromIterable(beers);
     }
 
     public void addBeer(final Beer beer) {

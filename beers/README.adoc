@@ -120,7 +120,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 
 @Singleton
 public class BeerService {
@@ -133,8 +133,8 @@ public class BeerService {
         addBeer(new Beer(3L, "Urbräu", "Tavolago AG"));
     }
 
-    public Observable<Beer> getAllBeers() {
-        return Observable.fromIterable(beers);
+    public Flowable<Beer> getAllBeers() {
+        return Flowable.fromIterable(beers);
     }
 
     public void addBeer(final Beer beer) {
@@ -153,7 +153,7 @@ import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.Post;
-import io.reactivex.Observable;
+import io.reactivex.Flowable;
 
 @Controller("/beers")
 public class BeerController {
@@ -165,7 +165,7 @@ public class BeerController {
     }
 
     @Get
-    public Observable<Beer> getAllBeers() {
+    public Flowable<Beer> getAllBeers() {
         return service.getAllBeers();
     }
 
