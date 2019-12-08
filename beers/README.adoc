@@ -115,8 +115,8 @@ public class Beer {
 ----
 package ch.jug.micronaut.beers;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.inject.Singleton;
 
@@ -130,7 +130,7 @@ public class BeerService {
 
     private static final Logger logger = LoggerFactory.getLogger(BeerService.class);
 
-    private final List<Beer> beers = new ArrayList<>();
+    private final List<Beer> beers = new CopyOnWriteArrayList<>();
 
     public BeerService() {
         addBeer(new Beer(1L, "Luzerner Bier", "Brauerei Luzern AG"));
@@ -157,6 +157,8 @@ public class BeerService {
 
 }
 ----
+
+In the service class, we artificially slow down the response to calling the beers to simulate a long-running operation and thus better see the effect of asynchronous communication in the log.
 
 .BeerController.java
 [source,java]
@@ -323,6 +325,74 @@ If an environment variable is mentioned in the configuration file, it is getting
  ./gradlew run
 
 Play around with commenting the `beers:` section from the configuration file in and out in combination with and without an environment variable to check out the different behavior.
+
+== Events
+
+=== Publishing Events
+
+First, create an own event class for added beers:
+
+.BeerAddedEvent.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+public class BeerAddedEvent {
+
+    private final Beer beer;
+
+    public BeerAddedEvent(final Beer beer) {
+        this.beer = beer;
+    }
+
+    public Beer getBeer() {
+        return beer;
+    }
+}
+----
+
+Now, lets publish the event for each beer added:
+
+.BeerService.java
+[source,java]
+----
+private ApplicationEventPublisher eventPublisher;
+
+public BeerService(final ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
+    addBeer(new Beer(1L, "Luzerner Bier", "Brauerei Luzern AG"));
+    addBeer(new Beer(2L, "Lozärner Bier", "Lozärner Bier AG"));
+    addBeer(new Beer(3L, "Urbräu", "Tavolago AG"));
+}
+
+public void addBeer(final Beer beer) {
+    beers.add(beer);
+    eventPublisher.publishEvent(new BeerAddedEvent(beer));
+}
+----
+
+=== Handling Events
+
+.BeerAddedListener.java
+[source,java]
+----
+package ch.jug.micronaut.beers;
+
+import io.micronaut.runtime.event.annotation.EventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class BeerAddedListener {
+
+    private static final Logger logger = LoggerFactory.getLogger(BeerAddedEvent.class);
+
+    @EventListener
+    public void doSomethingOnNewBeer(final BeerAddedEvent event) {
+        logger.info("Wow, there is a new beer available: {}", event.getBeer());
+    }
+
+}
+----
 
 == Resilience
 
