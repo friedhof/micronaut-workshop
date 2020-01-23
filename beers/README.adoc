@@ -198,13 +198,13 @@ Let's start and check, what we created so far:
 ```
 ./gradlew run
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 
 curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
 http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 ```
 
@@ -534,13 +534,13 @@ native-image --no-server -jar build/libs/beers-0.1-all.jar
 
 BEERS_FIXED_DELAY=3s ./beers
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 
 curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
 http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 ```
 
@@ -551,12 +551,12 @@ docker build . -t beers
 
 docker run -p 8080:8080 beers
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 
 curl -v -H "Content-Type: application/json" -d '{"id": 4, "name": "DukeDrop", "brewery": "Duke’s Brewery"}' http://localhost:8080/beers
 http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
 
-curl -v http://localhost:8080/beers
+curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 ```
