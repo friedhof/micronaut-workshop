@@ -1,8 +1,11 @@
-:sourcedir: src/main/java
+:sectnums:
+:sectnumlevels: 2
+:toc: left
+:toclevels: 2
+:icons: font
+:experimental:
 
 = Micronaut and GraalVM Demo
-
-Copyright © Marcus Fihlon
 
 == Introduction
 
@@ -263,6 +266,8 @@ public class BeerFetcher {
  ./gradlew run
 
 == The Configuration
+
+WARNING: You have a problem. You decide to solve it with configuration. Now you have <%= $problems %> problems. (link:https://twitter.com/tastapod/status/342935892207497219[Daniel Terhorst-North])
 
 === Configuration file
 
@@ -560,3 +565,7 @@ http POST localhost:8080/beers id=4 name=DukeDrop brewery="Duke’s Brewery"
 curl -v -N http://localhost:8080/beers
 http localhost:8080/beers
 ```
+
+== Copyright
+
+Copyright © Marcus Fihlon
