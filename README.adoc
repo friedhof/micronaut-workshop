@@ -7,8 +7,6 @@
 
 = Micronaut and GraalVM in Practice
 
-Copyright © Marcus Fihlon
-
 == Introduction
 
 Micronaut is a modern, JVM-based full-stack framework for building modular, easily testable microservice and serverless applications. Developed by the creators of the Grails framework and with the support of many Spring developers, who have used their experience in these areas to develop a framework specifically focused on microservices.
@@ -41,4 +39,10 @@ All participants receive detailed information in advance about the preparation.
 1. Lesson: link:list[A little exercise about the *GraalVM Native Image* tool.]
 2. Lesson: link:beers[A hands-on workshop as an introduction to *Micronaut*.]
 
+== Tips
+
 TIP: If you want cURL to add a newline at the end of the output, add `-w "\n"` to your `~/.curlrc` file.
+
+== Copyright
+
+Copyright © Marcus Fihlon
