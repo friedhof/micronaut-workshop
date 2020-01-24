@@ -1,3 +1,10 @@
+:sectnums:
+:sectnumlevels: 2
+:toc: left
+:toclevels: 2
+:icons: font
+:experimental:
+
 = Micronaut and GraalVM in Practice
 
 Copyright © Marcus Fihlon
