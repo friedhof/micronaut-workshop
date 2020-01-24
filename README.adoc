@@ -33,3 +33,5 @@ All participants receive detailed information in advance about the preparation.
 
 1. Lesson: link:list[A little exercise about the *GraalVM Native Image* tool.]
 2. Lesson: link:beers[A hands-on workshop as an introduction to *Micronaut*.]
+
+TIP: If you want cURL to add a newline at the end of the output, add `-w "\n"` to your `~/.curlrc` file.
